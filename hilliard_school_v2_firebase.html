@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hilliard School</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBxQOBGtfmJGfv5Vd544zmn5Hy09405nBo",
+    authDomain: "hilliard-school.firebaseapp.com",
+    projectId: "hilliard-school",
+    storageBucket: "hilliard-school.firebasestorage.app",
+    messagingSenderId: "899656523162",
+    appId: "1:899656523162:web:49828192e488a8fde4ee23"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const appDocRef = db.collection('hilliardSchool').doc('appState');
+</script>
+<style>
+  :root {
+    --navy: #1E3A5F; --navy-dark: #142A45;
+    --gold: #C9A227; --gold-light: #FBF3DC;
+    --ink: #1F2937; --ink-soft: #5B6472; --line: #E2E6EA;
+    --card: #FFFFFF; --page: #F4F6F8;
+    --green: #1F8A5F; --green-light: #E7F5EE;
+    --red: #B3413A; --red-light: #FBEAE8;
+    --blue: #2563A6;
+    --kid-purple: #6D4FC2; --kid-teal: #0F9C8F; --kid-orange: #E8762C; --kid-pink: #D14F8A;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: var(--ink); }
+
+  /* ---------- MODE PICKER ---------- */
+  #modePicker {
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: var(--navy); color: white; padding: 24px; text-align: center;
+  }
+  #modePicker .crest-big {
+    width: 72px; height: 72px; border-radius: 50%; background: var(--gold); color: var(--navy-dark);
+    display: flex; align-items: center; justify-content: center; font-family: Georgia, serif; font-weight: 700; font-size: 34px;
+    margin: 0 auto 14px;
+  }
+  #modePicker h1 { font-family: Georgia, serif; font-size: 30px; margin: 0 0 6px; }
+  #modePicker p.tag { color: #C9D6E4; margin: 0 0 34px; }
+  .mode-cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+  .mode-card {
+    background: white; color: var(--ink); border-radius: 16px; padding: 28px 32px; width: 220px;
+    cursor: pointer; border: none; font-family: inherit;
+  }
+  .mode-card .emoji { font-size: 40px; margin-bottom: 10px; }
+  .mode-card h3 { margin: 0 0 4px; font-size: 18px; }
+  .mode-card p { margin: 0; font-size: 12.5px; color: var(--ink-soft); }
+  .mode-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+
+  /* ---------- SHARED HEADER/NAV ---------- */
+  .app-header { background: var(--navy); color: white; padding: 18px 24px; display: flex; align-items: center; gap: 14px; }
+  .crest { width: 42px; height: 42px; border-radius: 50%; background: var(--gold); color: var(--navy-dark);
+    display: flex; align-items: center; justify-content: center; font-family: Georgia, serif; font-weight: 700; font-size: 20px; flex-shrink: 0; }
+  .app-header h1 { font-family: Georgia, serif; font-size: 22px; margin: 0; }
+  .app-header .tagline { font-size: 12px; color: #C9D6E4; margin: 0; }
+  .switch-user { margin-left: auto; background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.3);
+    font-size: 12px; padding: 7px 12px; border-radius: 7px; font-family: inherit; cursor: pointer; }
+
+  .nav-bar { background: var(--navy-dark); display: flex; overflow-x: auto; padding: 0 12px; }
+  .nav-btn { background: none; border: none; color: #C9D6E4; padding: 13px 18px; font-size: 14px; font-weight: 600;
+    cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; font-family: inherit; }
+  .nav-btn.active { color: white; border-bottom-color: var(--gold); }
+  .nav-btn:hover { color: white; }
+
+  .view { display: none; max-width: 900px; margin: 0 auto; padding: 24px 16px 64px; }
+  .view.active { display: block; }
+
+  h2.section-title { font-size: 20px; font-weight: 700; margin: 0 0 4px; }
+  .subtitle { color: var(--ink-soft); font-size: 14px; margin: 0 0 20px; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+  .card h3 { font-size: 15px; font-weight: 700; margin: 0 0 14px; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .stat-card .label { font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
+  .stat-card .value { font-size: 24px; font-weight: 700; }
+  .stat-card .value.blue { color: var(--blue); }
+  .stat-card .value.green { color: var(--green); }
+  .stat-card .value.gold { color: #9C7A0E; }
+
+  .form-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 12px; color: var(--ink-soft); font-weight: 600; }
+  .field input, .field select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; font-family: inherit; }
+  .field.grow { flex: 1; min-width: 140px; }
+  .field.date input { width: 150px; }
+  .field.narrow input, .field.narrow select { width: 110px; }
+
+  button { background: var(--navy); color: white; border: none; border-radius: 8px; padding: 9px 16px;
+    font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  button:hover { opacity: 0.9; }
+  button.secondary { background: white; color: var(--navy); border: 1px solid var(--navy); }
+  button.gold-btn { background: var(--gold); color: var(--navy-dark); }
+  button.danger-text { background: none; color: var(--red); border: none; padding: 4px 8px; font-size: 12px; font-weight: 600; }
+
+  .chart-container { position: relative; height: 260px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 8px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--ink-soft); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
+  tr:last-child td { border-bottom: none; }
+
+  .empty-note { color: var(--ink-soft); font-size: 13px; font-style: italic; padding: 8px 0; }
+
+  .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .dash-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; cursor: pointer; transition: box-shadow 0.15s ease; }
+  .dash-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+  .dash-card .icon-circle { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: white; margin-bottom: 10px; }
+  .dash-card h4 { margin: 0 0 4px; font-size: 15px; }
+  .dash-card p { margin: 0; font-size: 12.5px; color: var(--ink-soft); }
+
+  .link-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+  .link-card { display: block; text-decoration: none; color: inherit; background: var(--card); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px; position: relative; }
+  .link-card h4 { margin: 0 0 4px; font-size: 15px; color: var(--navy); }
+  .link-card p { margin: 0; font-size: 12px; color: var(--ink-soft); word-break: break-all; }
+  .link-card .remove-link { position: absolute; top: 8px; right: 8px; background: none; border: none; color: var(--red); font-size: 12px; padding: 2px 6px; cursor: pointer; }
+
+  .report-preview { border: 1px solid var(--line); border-radius: 10px; padding: 24px; background: white; }
+  .report-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid var(--ink); padding-bottom: 14px; }
+  .report-header h2 { font-size: 20px; margin: 0 0 4px; }
+  .report-header .range { color: var(--ink-soft); font-size: 13px; }
+
+  /* ---------- STUDENT MODE (kid-friendly) ---------- */
+  #studentApp .app-header { background: var(--kid-purple); }
+  #studentApp .nav-bar { background: #5A3FA3; }
+  #studentApp .nav-btn.active { border-bottom-color: #FFD23F; }
+  #studentApp .crest { background: #FFD23F; }
+
+  .task-row { display: flex; align-items: center; gap: 14px; background: white; border: 2px solid var(--line);
+    border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+  .task-row input[type="checkbox"] { width: 26px; height: 26px; accent-color: var(--kid-teal); flex-shrink: 0; cursor: pointer; }
+  .task-row label { font-size: 16px; cursor: pointer; }
+  .task-row.done { background: var(--green-light); border-color: var(--green); }
+  .task-row.done label { text-decoration: line-through; color: var(--ink-soft); }
+
+  .progress-track { height: 18px; background: var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
+  .progress-fill { height: 100%; background: var(--kid-teal); transition: width 0.3s ease; }
+
+  .flash-card-wrap { display: flex; justify-content: center; padding: 20px 0; }
+  .flash-card { width: 100%; max-width: 420px; min-height: 200px; background: white; border: 3px solid var(--kid-purple);
+    border-radius: 16px; display: flex; align-items: center; justify-content: center; text-align: center;
+    font-size: 22px; font-weight: 600; padding: 24px; cursor: pointer; }
+
+  .badge-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .badge { background: white; border: 2px solid var(--gold); border-radius: 14px; padding: 16px; text-align: center; width: 110px; }
+  .badge .badge-emoji { font-size: 30px; }
+  .badge .badge-label { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+  .badge.locked { opacity: 0.35; }
+
+  .streak-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .streak-day { aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: white; font-weight: 600; }
+
+  .timer-display { font-size: 48px; font-weight: 700; text-align: center; color: var(--kid-purple); margin: 10px 0 20px; font-variant-numeric: tabular-nums; }
+
+  @media print {
+    .no-print { display: none !important; }
+    body { background: white; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============== MODE PICKER ============== -->
+<div id="modePicker">
+  <div class="crest-big">H</div>
+  <h1>Hilliard School</h1>
+  <p class="tag">Who's using the app?</p>
+  <div class="mode-cards">
+    <button class="mode-card" id="pickTeacher">
+      <div class="emoji">👩‍🏫</div>
+      <h3>Teacher</h3>
+      <p>Gradebook, attendance, report cards, and setup tools</p>
+    </button>
+    <button class="mode-card" id="pickStudent">
+      <div class="emoji">🎓</div>
+      <h3>Hunter's Login</h3>
+      <p>My Day, Flashcards, Rewards, and Reading Timer</p>
+    </button>
+  </div>
+</div>
+
+<!-- ============== TEACHER MODE ============== -->
+<div id="teacherApp" style="display:none;">
+  <div class="app-header no-print">
+    <div class="crest">H</div>
+    <div><h1>Hilliard School</h1><p class="tagline">Teacher Tools</p></div>
+    <span id="syncStatusTeacher" style="margin-left:auto; font-size:12px; color:#C9D6E4;">⏳ Connecting...</span>
+    <button class="switch-user no-print" onclick="showPicker()">Switch User</button>
+  </div>
+  <div class="nav-bar no-print">
+    <button class="nav-btn active" data-view="dashboard">Dashboard</button>
+    <button class="nav-btn" data-view="reading">Reading Fluency</button>
+    <button class="nav-btn" data-view="gradebook">Gradebook</button>
+    <button class="nav-btn" data-view="reportcard">Report Card</button>
+    <button class="nav-btn" data-view="attendance">Attendance</button>
+    <button class="nav-btn" data-view="studenttools">Student Tools</button>
+    <button class="nav-btn" data-view="links">Quick Links</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="view active" id="view-dashboard">
+    <h2 class="section-title">Welcome back</h2>
+    <p class="subtitle">Here's a quick look across the whole school.</p>
+    <div class="dash-grid">
+      <div class="dash-card" data-goto="reading"><div class="icon-circle" style="background:var(--blue);">📈</div><h4>Reading Fluency</h4><p id="dashReadingSummary">No entries yet</p></div>
+      <div class="dash-card" data-goto="gradebook"><div class="icon-circle" style="background:var(--green);">📚</div><h4>Gradebook</h4><p id="dashGradebookSummary">No grades yet</p></div>
+      <div class="dash-card" data-goto="attendance"><div class="icon-circle" style="background:#9C7A0E;">🗓️</div><h4>Attendance</h4><p id="dashAttendanceSummary">No days logged yet</p></div>
+      <div class="dash-card" data-goto="studenttools"><div class="icon-circle" style="background:var(--kid-purple);">🎓</div><h4>Student Activity</h4><p id="dashStudentSummary">No activity yet</p></div>
+      <div class="dash-card" data-goto="links"><div class="icon-circle" style="background:var(--navy);">🔗</div><h4>Quick Links</h4><p>Jump to Time4Learning, IXL, and lesson plans</p></div>
+    </div>
+
+    <div class="card" style="margin-top:20px; border-color:var(--gold);">
+      <h3>⚠️ Backup &amp; Restore</h3>
+      <p class="subtitle" style="margin-bottom:12px;">If auto-save ever seems unreliable, use this to keep a real backup file on your computer. Do this regularly!</p>
+      <div class="form-row">
+        <button id="bkDownloadBtn">⬇ Download Backup</button>
+        <button class="secondary" id="bkRestoreBtn">⬆ Restore from Backup</button>
+        <input type="file" id="bkFileInput" accept=".json" style="display:none;">
+      </div>
+      <div id="bkStatusNote" style="margin-top:10px; font-size:13px;"></div>
+    </div>
+  </div>
+
+  <!-- READING FLUENCY -->
+  <div class="view" id="view-reading">
+    <div class="no-print">
+      <h2 class="section-title">Reading Fluency Progress Monitor</h2>
+      <p class="subtitle">Track words-per-minute over time and print a clean report each quarter.</p>
+      <div class="stats-row">
+        <div class="stat-card"><div class="label">Latest WPM</div><div class="value blue" id="rfStatLatest">—</div></div>
+        <div class="stat-card"><div class="label">Sessions Logged</div><div class="value" id="rfStatCount">0</div></div>
+        <div class="stat-card"><div class="label">Growth Since Start</div><div class="value green" id="rfStatGrowth">—</div></div>
+        <div class="stat-card"><div class="label">To Goal</div><div class="value gold" id="rfStatToGoal">—</div></div>
+      </div>
+      <div class="card"><h3>Goal</h3>
+        <div class="form-row">
+          <div class="field narrow"><label>Target WPM</label><input type="number" id="rfGoalInput" min="0" placeholder="e.g. 100"></div>
+          <button class="secondary" id="rfSaveGoalBtn">Save Goal</button>
+        </div>
+      </div>
+      <div class="card"><h3>Add a Reading Session</h3>
+        <div class="form-row">
+          <div class="field date"><label>Date</label><input type="date" id="rfEntryDate"></div>
+          <div class="field narrow"><label>WPM</label><input type="number" id="rfEntryWPM" min="0" placeholder="e.g. 75"></div>
+          <div class="field grow"><label>Notes (optional)</label><input type="text" id="rfEntryNotes" placeholder="Passage, book, or context"></div>
+          <button id="rfAddBtn">Add Entry</button>
+        </div>
+      </div>
+      <div class="card"><h3>Full Progress</h3>
+        <div class="chart-container"><canvas id="rfMainChart"></canvas></div>
+        <table id="rfMainTable"><thead><tr><th>Date</th><th>WPM</th><th>Notes</th><th></th></tr></thead><tbody id="rfMainTableBody"></tbody></table>
+        <div id="rfEmptyNote" class="empty-note" style="display:none;">No entries yet — add your first reading session above.</div>
+      </div>
+      <div class="card"><h3>Quarterly Report</h3>
+        <div class="form-row">
+          <div class="field date"><label>From</label><input type="date" id="rfReportStart"></div>
+          <div class="field date"><label>To</label><input type="date" id="rfReportEnd"></div>
+          <button class="secondary" id="rfUpdateReportBtn">Update Report</button>
+          <button id="rfPrintBtn">Print Report</button>
+        </div>
+      </div>
+    </div>
+    <div class="report-preview" id="rfReportPreview">
+      <div class="report-header"><h2>Reading Fluency Progress Report</h2><div class="range" id="rfReportRangeLabel">Select a date range above</div></div>
+      <div class="stats-row" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="stat-card"><div class="label">Starting WPM</div><div class="value" id="rfReportStartWPM">—</div></div>
+        <div class="stat-card"><div class="label">Ending WPM</div><div class="value blue" id="rfReportEndWPM">—</div></div>
+        <div class="stat-card"><div class="label">Growth</div><div class="value green" id="rfReportGrowth">—</div></div>
+        <div class="stat-card"><div class="label">Goal</div><div class="value gold" id="rfReportGoal">—</div></div>
+      </div>
+      <div class="chart-container"><canvas id="rfReportChart"></canvas></div>
+      <table id="rfReportTable"><thead><tr><th>Date</th><th>WPM</th><th>Notes</th></tr></thead><tbody id="rfReportTableBody"></tbody></table>
+      <div id="rfReportEmptyNote" class="empty-note" style="display:none;">No sessions logged in this date range.</div>
+    </div>
+  </div>
+
+  <!-- GRADEBOOK -->
+  <div class="view" id="view-gradebook">
+    <h2 class="section-title">Gradebook</h2>
+    <p class="subtitle">Log assignment and test scores by subject.</p>
+    <div class="stats-row" id="gbSubjectAverages"></div>
+    <div class="card"><h3>Add a Grade Entry</h3>
+      <div class="form-row">
+        <div class="field date"><label>Date</label><input type="date" id="gbDate"></div>
+        <div class="field grow"><label>Subject</label>
+          <select id="gbSubject"><option>Math</option><option>ELA</option><option>Reading</option><option>Geography</option>
+            <option>Entrepreneurship</option><option>Gardening</option><option value="__other__">Other...</option></select>
+        </div>
+        <div class="field grow" id="gbCustomSubjectField" style="display:none;"><label>Custom Subject</label><input type="text" id="gbCustomSubject"></div>
+        <div class="field grow"><label>Assignment</label><input type="text" id="gbAssignment" placeholder="e.g. Week 3 Quiz"></div>
+        <div class="field narrow"><label>Score (%)</label><input type="number" id="gbScore" min="0" max="100" placeholder="e.g. 92"></div>
+        <button id="gbAddBtn">Add Grade</button>
+      </div>
+    </div>
+    <div class="card"><h3>All Grades</h3>
+      <table id="gbTable"><thead><tr><th>Date</th><th>Subject</th><th>Assignment</th><th>Score</th><th></th></tr></thead><tbody id="gbTableBody"></tbody></table>
+      <div id="gbEmptyNote" class="empty-note" style="display:none;">No grades logged yet.</div>
+    </div>
+  </div>
+
+  <!-- REPORT CARD -->
+  <div class="view" id="view-reportcard">
+    <div class="no-print">
+      <h2 class="section-title">Report Card Generator</h2>
+      <p class="subtitle">Pick a date range to generate a printable report card.</p>
+      <div class="card">
+        <div class="form-row">
+          <div class="field grow"><label>Student Name</label><input type="text" id="rcStudentName" value="Hunter"></div>
+          <div class="field grow"><label>Quarter Label</label><input type="text" id="rcQuarterLabel" placeholder="e.g. Quarter 1"></div>
+          <div class="field date"><label>From</label><input type="date" id="rcStart"></div>
+          <div class="field date"><label>To</label><input type="date" id="rcEnd"></div>
+          <button class="secondary" id="rcGenerateBtn">Generate Report Card</button>
+          <button id="rcPrintBtn">Print Report Card</button>
+        </div>
+      </div>
+    </div>
+    <div class="report-preview" id="rcPreview">
+      <div class="report-header">
+        <div class="crest" style="margin: 0 auto 10px;">H</div><h2>Hilliard School</h2>
+        <div class="range" style="font-size:15px; font-weight:600; color: var(--ink); margin-top:6px;" id="rcStudentLine">Student: —</div>
+        <div class="range" id="rcQuarterLine">Select a date range above</div>
+      </div>
+      <table id="rcTable"><thead><tr><th>Subject</th><th>Assignments</th><th>Average</th><th>Grade</th></tr></thead><tbody id="rcTableBody"></tbody></table>
+      <div id="rcEmptyNote" class="empty-note" style="display:none;">No grades logged in this date range.</div>
+      <div class="stats-row" style="grid-template-columns: repeat(3, 1fr); margin-top:20px;">
+        <div class="stat-card"><div class="label">Overall Average</div><div class="value blue" id="rcOverallAvg">—</div></div>
+        <div class="stat-card"><div class="label">Overall Grade</div><div class="value green" id="rcOverallGrade">—</div></div>
+        <div class="stat-card"><div class="label">Attendance This Period</div><div class="value gold" id="rcAttendance">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ATTENDANCE -->
+  <div class="view" id="view-attendance">
+    <h2 class="section-title">Attendance</h2>
+    <p class="subtitle">Log each school day.</p>
+    <div class="stats-row">
+      <div class="stat-card"><div class="label">Days Present</div><div class="value green" id="atStatPresent">0</div></div>
+      <div class="stat-card"><div class="label">Days Absent</div><div class="value" style="color:var(--red);" id="atStatAbsent">0</div></div>
+      <div class="stat-card"><div class="label">Half Days</div><div class="value gold" id="atStatHalf">0</div></div>
+      <div class="stat-card"><div class="label">Attendance Rate</div><div class="value blue" id="atStatRate">—</div></div>
+    </div>
+    <div class="card"><h3>Log a Day</h3>
+      <div class="form-row">
+        <div class="field date"><label>Date</label><input type="date" id="atDate"></div>
+        <div class="field grow"><label>Status</label>
+          <select id="atStatus"><option value="Present">Present</option><option value="Absent">Absent</option><option value="Half Day">Half Day</option></select>
+        </div>
+        <div class="field grow"><label>Notes (optional)</label><input type="text" id="atNotes" placeholder="e.g. sick day, field trip"></div>
+        <button id="atAddBtn">Add Day</button>
+      </div>
+    </div>
+    <div class="card"><h3>Attendance Log</h3>
+      <table id="atTable"><thead><tr><th>Date</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody id="atTableBody"></tbody></table>
+      <div id="atEmptyNote" class="empty-note" style="display:none;">No days logged yet.</div>
+    </div>
+  </div>
+
+  <!-- STUDENT TOOLS (teacher-side management) -->
+  <div class="view" id="view-studenttools">
+    <h2 class="section-title">Student Tools</h2>
+    <p class="subtitle">Set up Hunter's apps and review his activity.</p>
+
+    <div class="card">
+      <h3>Manage "My Day" Tasks</h3>
+      <div class="form-row">
+        <div class="field grow"><label>Day</label>
+          <select id="mdDaySelect">
+            <option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option>
+          </select>
+        </div>
+        <div class="field grow"><label>New Task</label><input type="text" id="mdNewTask" placeholder="e.g. Math worksheet"></div>
+        <button id="mdAddTaskBtn">Add Task</button>
+      </div>
+      <table id="mdTaskTable"><thead><tr><th>Task</th><th></th></tr></thead><tbody id="mdTaskTableBody"></tbody></table>
+      <div id="mdEmptyNote" class="empty-note" style="display:none;">No tasks yet for this day.</div>
+    </div>
+
+    <div class="card">
+      <h3>Manage Reading Passages</h3>
+      <p class="subtitle" style="margin-bottom:10px;">Paste in a passage's text once, and it's saved for every future timed reading.</p>
+      <div class="form-row">
+        <div class="field grow"><label>Passage Title</label><input type="text" id="rpTitle" placeholder="e.g. The Lighthouse Keeper"></div>
+      </div>
+      <div class="form-row" style="margin-top:10px;">
+        <div class="field grow" style="width:100%;"><label>Passage Text</label>
+          <textarea id="rpText" rows="5" style="padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; font-family:inherit; width:100%; resize:vertical;" placeholder="Paste the passage text here..."></textarea>
+        </div>
+      </div>
+      <button id="rpAddBtn" style="margin-top:10px;">Save Passage</button>
+      <table id="rpTable" style="margin-top:14px;"><thead><tr><th>Title</th><th>Word Count</th><th></th></tr></thead><tbody id="rpTableBody"></tbody></table>
+      <div id="rpEmptyNote" class="empty-note" style="display:none;">No passages saved yet.</div>
+    </div>
+
+    <div class="card">
+      <h3>Manage Flashcard Decks</h3>
+      <div class="form-row">
+        <div class="field grow"><label>Deck Name</label><input type="text" id="fcNewDeckName" placeholder="e.g. Northeast States & Capitals"></div>
+        <button id="fcNewDeckBtn">Create Deck</button>
+      </div>
+      <div class="form-row" style="margin-top:14px;">
+        <div class="field grow"><label>Add to Deck</label>
+          <select id="fcDeckSelect"></select>
+        </div>
+        <div class="field grow"><label>Front (question)</label><input type="text" id="fcCardFront"></div>
+        <div class="field grow"><label>Back (answer)</label><input type="text" id="fcCardBack"></div>
+        <button id="fcAddCardBtn">Add Card</button>
+      </div>
+      <table id="fcCardTable"><thead><tr><th>Front</th><th>Back</th><th></th></tr></thead><tbody id="fcCardTableBody"></tbody></table>
+      <div id="fcEmptyNote" class="empty-note" style="display:none;">No cards in this deck yet.</div>
+    </div>
+
+    <div class="card">
+      <h3>Student Activity Log</h3>
+      <p class="subtitle" style="margin-bottom:8px;">Current streak: <strong id="saCurrentStreak">0 days</strong></p>
+      <table><thead><tr><th>Date</th><th>My Day Tasks</th><th>All Done?</th></tr></thead><tbody id="saMyDayBody"></tbody></table>
+      <div id="saMyDayEmpty" class="empty-note" style="display:none;">No My Day activity yet.</div>
+      <h3 style="margin-top:20px;">Flashcard Sessions</h3>
+      <table><thead><tr><th>Date</th><th>Deck</th><th>Score</th></tr></thead><tbody id="saFlashBody"></tbody></table>
+      <div id="saFlashEmpty" class="empty-note" style="display:none;">No flashcard sessions yet.</div>
+    </div>
+  </div>
+
+  <!-- QUICK LINKS -->
+  <div class="view" id="view-links">
+    <h2 class="section-title">Quick Links</h2>
+    <p class="subtitle">One-click access to the tools and lesson plans you use most.</p>
+    <div class="card"><h3>Add a Link</h3>
+      <div class="form-row">
+        <div class="field grow"><label>Label</label><input type="text" id="lkLabel" placeholder="e.g. Science Lesson Plan"></div>
+        <div class="field grow"><label>URL</label><input type="text" id="lkUrl" placeholder="https://..."></div>
+        <button id="lkAddBtn">Add Link</button>
+      </div>
+    </div>
+    <div class="link-grid" id="lkGrid"></div>
+  </div>
+</div>
+
+<!-- ============== STUDENT MODE ============== -->
+<div id="studentApp" style="display:none;">
+  <div class="app-header no-print">
+    <div class="crest">H</div>
+    <div><h1>Hi, Hunter! 👋</h1><p class="tagline">Your Hilliard School apps</p></div>
+    <span id="syncStatusStudent" style="margin-left:auto; font-size:12px; color:#E4DBFA;">⏳ Connecting...</span>
+    <button class="switch-user no-print" onclick="showPicker()">Switch User</button>
+  </div>
+  <div class="nav-bar no-print">
+    <button class="nav-btn active" data-sview="myday">My Day</button>
+    <button class="nav-btn" data-sview="flashcards">Flashcards</button>
+    <button class="nav-btn" data-sview="rewards">Rewards</button>
+    <button class="nav-btn" data-sview="timer">Reading Timer</button>
+  </div>
+
+  <!-- MY DAY -->
+  <div class="view active" id="sview-myday">
+    <h2 class="section-title" id="mdTodayLabel">Today</h2>
+    <p class="subtitle">Check off each task as you finish it!</p>
+    <div class="progress-track"><div class="progress-fill" id="mdProgressFill" style="width:0%;"></div></div>
+    <p id="mdProgressText" style="text-align:center; color:var(--ink-soft); font-size:13px; margin-top:0;">0 of 0 done</p>
+    <div id="mdTaskList"></div>
+    <div id="mdCelebrate" style="display:none; text-align:center; font-size:18px; font-weight:700; color:var(--green); margin-top:10px;">🎉 All done for today! Great work!</div>
+    <div id="mdNoTasksNote" class="empty-note" style="display:none;">No tasks set for today yet — ask your teacher to add some in Student Tools!</div>
+  </div>
+
+  <!-- FLASHCARDS -->
+  <div class="view" id="sview-flashcards">
+    <h2 class="section-title">Flashcards</h2>
+    <p class="subtitle">Pick a deck and test yourself!</p>
+    <div class="form-row" id="fcPickerRow">
+      <div class="field grow"><label>Choose a deck</label><select id="fcStudyDeckSelect"></select></div>
+      <button id="fcStartBtn">Start Studying</button>
+    </div>
+    <div id="fcNoDeckNote" class="empty-note" style="display:none;">No decks yet — ask your teacher to make one in Student Tools!</div>
+
+    <div id="fcStudyArea" style="display:none;">
+      <p style="text-align:center; color:var(--ink-soft); font-size:13px;" id="fcProgressLabel">Card 1 of 5</p>
+      <div class="flash-card-wrap"><div class="flash-card" id="fcCardDisplay">Click Start to begin</div></div>
+      <div class="form-row" id="fcAnswerButtons" style="justify-content:center; display:none;">
+        <button class="secondary" id="fcStillLearningBtn">😅 Still Learning</button>
+        <button id="fcGotItBtn">✅ Got It!</button>
+      </div>
+    </div>
+    <div id="fcResultArea" style="display:none; text-align:center;">
+      <h3 style="font-size:22px;">Nice work!</h3>
+      <p style="font-size:18px;" id="fcResultScore"></p>
+      <button id="fcRestartBtn">Study Again</button>
+    </div>
+  </div>
+
+  <!-- REWARDS -->
+  <div class="view" id="sview-rewards">
+    <h2 class="section-title">Rewards</h2>
+    <p class="subtitle">Keep your streak going by finishing all your tasks each day!</p>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:40px;" id="rwStreakEmoji">🔥</div>
+      <div style="font-size:30px; font-weight:700; color:var(--kid-orange);" id="rwStreakCount">0 days</div>
+      <p style="color:var(--ink-soft); margin:4px 0 0;">Current streak</p>
+    </div>
+    <div class="card">
+      <h3>Badges</h3>
+      <div class="badge-row" id="rwBadgeRow"></div>
+    </div>
+    <div class="card">
+      <h3>Last 14 Days</h3>
+      <div class="streak-grid" id="rwStreakGrid"></div>
+    </div>
+  </div>
+
+  <!-- READING TIMER -->
+  <div class="view" id="sview-timer">
+    <h2 class="section-title">Reading Timer</h2>
+    <p class="subtitle">Pick a passage, then have your teacher time you and mark any mistakes!</p>
+
+    <div class="card" id="rtSetupCard">
+      <div class="form-row">
+        <div class="field grow"><label>Choose a passage</label><select id="rtPassageSelect"></select></div>
+        <button id="rtBeginBtn">Begin</button>
+      </div>
+      <div id="rtNoPassageNote" class="empty-note" style="display:none;">No passages saved yet — ask your teacher to add one in Student Tools!</div>
+    </div>
+
+    <div class="card" id="rtReadingCard" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
+        <div class="timer-display" id="rtDisplay" style="margin:0; font-size:34px;">00:00</div>
+        <div class="form-row" style="margin:0;">
+          <button id="rtStartBtn">▶ Start</button>
+          <button class="secondary" id="rtStopBtn" disabled>⏹ Stop &amp; Score</button>
+        </div>
+      </div>
+      <p style="font-size:13px; color:var(--ink-soft); margin:0 0 10px;">
+        <strong>Tap a word</strong> the moment you hear a mistake. If time runs out or he finishes, tap
+        <strong>"Mark Stop Point"</strong> then tap the last word he reached (or use "Finished Passage!" if he read it all).
+      </p>
+      <div class="form-row" style="margin-bottom:14px;">
+        <button class="secondary" id="rtMarkStopBtn">📍 Mark Stop Point</button>
+        <button class="secondary" id="rtFinishedBtn">✅ Finished Passage!</button>
+      </div>
+      <div id="rtPassageDisplay" style="line-height:2.1; font-size:17px; background:#FAFAFA; border:1px solid var(--line); border-radius:10px; padding:16px;"></div>
+    </div>
+
+    <div class="card" id="rtResultCard" style="display:none;">
+      <h3>Results</h3>
+      <div class="stats-row" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="stat-card"><div class="label">Words Read</div><div class="value blue" id="rtWordsRead">—</div></div>
+        <div class="stat-card"><div class="label">Miscues</div><div class="value" style="color:var(--red);" id="rtMiscueCount">—</div></div>
+        <div class="stat-card"><div class="label">WCPM (Fluency)</div><div class="value green" id="rtWcpm">—</div></div>
+      </div>
+      <p style="font-size:13px; color:var(--ink-soft);">WCPM = Words Correct Per Minute — the standard reading fluency measure.</p>
+      <button id="rtSaveBtn" class="gold-btn">Save to My Progress</button>
+      <button class="secondary" id="rtDoOverBtn">Try Again</button>
+      <div id="rtSavedNote" style="display:none; color:var(--green); font-weight:600; margin-top:10px;">✅ Saved! Great job, Hunter!</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function fmtDate(d) { const dt = new Date(d + 'T00:00:00'); return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+function todayStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function weekdayName(d) { return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' }); }
+
+// ============================================================
+// FIREBASE SYNC (single shared document, live cross-device sync)
+// ============================================================
+let fbSuppressNextSnapshot = false;
+function setSyncStatus(text, color) {
+  ['syncStatusTeacher', 'syncStatusStudent'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = text; el.style.color = color; }
+  });
+}
+async function fbPersist() {
+  try {
+    fbSuppressNextSnapshot = true;
+    await appDocRef.set(bkGatherAll());
+    setSyncStatus('✅ Synced', '#8FE3B0');
+  } catch (e) {
+    console.error('Firebase save failed', e);
+    setSyncStatus('⚠️ Save failed - check connection', '#F2A65A');
+  }
+}
+function fbApplyData(data) {
+  rfEntries = data.rfEntries || [];
+  rfGoal = data.rfGoal !== undefined ? data.rfGoal : null;
+  gbEntries = data.gbEntries || [];
+  atEntries = data.atEntries || [];
+  lkLinks = data.lkLinks || defaultLinks.slice();
+  mdTasks = data.mdTasks || { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [] };
+  mdLog = data.mdLog || [];
+  fcDecks = data.fcDecks || [];
+  fcLog = data.fcLog || [];
+  rpPassages = data.rpPassages || [];
+}
+function fbRenderAll() {
+  rfRender(); gbRender(); atRender(); lkRender();
+  mdRenderTeacherTaskList(); fcPopulateTeacherDeckSelect(); fcRenderTeacherCardTable();
+  rpRenderTeacherTable(); rtPopulatePassageSelect(); saRender();
+  if (document.getElementById('studentApp').style.display !== 'none') {
+    mdRenderToday(); rwRender();
+  }
+}
+async function fbInit() {
+  setSyncStatus('⏳ Connecting...', '#C9D6E4');
+  try {
+    const snap = await appDocRef.get();
+    if (snap.exists) {
+      fbApplyData(snap.data());
+    } else {
+      await appDocRef.set(bkGatherAll());
+    }
+    setSyncStatus('✅ Synced', '#8FE3B0');
+  } catch (e) {
+    console.error('Firebase load failed', e);
+    setSyncStatus('⚠️ Offline - check connection', '#F2A65A');
+  }
+  fbRenderAll();
+
+  appDocRef.onSnapshot((snap) => {
+    if (fbSuppressNextSnapshot) { fbSuppressNextSnapshot = false; return; }
+    if (snap.exists) {
+      fbApplyData(snap.data());
+      fbRenderAll();
+      setSyncStatus('✅ Updated from another device', '#8FE3B0');
+    }
+  }, (err) => {
+    console.error('Firebase listener error', err);
+    setSyncStatus('⚠️ Offline - check connection', '#F2A65A');
+  });
+}
+
+// ---------- MODE PICKER ----------
+function showPicker() {
+  document.getElementById('modePicker').style.display = 'flex';
+  document.getElementById('teacherApp').style.display = 'none';
+  document.getElementById('studentApp').style.display = 'none';
+}
+document.getElementById('pickTeacher').addEventListener('click', () => {
+  document.getElementById('modePicker').style.display = 'none';
+  document.getElementById('teacherApp').style.display = 'block';
+});
+document.getElementById('pickStudent').addEventListener('click', () => {
+  document.getElementById('modePicker').style.display = 'none';
+  document.getElementById('studentApp').style.display = 'block';
+  mdRenderToday(); fcPopulateStudyDeckSelect(); rwRender(); rtPopulatePassageSelect();
+});
+
+// ---------- TEACHER NAV ----------
+document.querySelectorAll('#teacherApp .nav-btn').forEach(btn => btn.addEventListener('click', () => goToView(btn.dataset.view)));
+document.querySelectorAll('#teacherApp .dash-card').forEach(card => card.addEventListener('click', () => goToView(card.dataset.goto)));
+function goToView(name) {
+  document.querySelectorAll('#teacherApp .view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('#teacherApp .nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  const btn = document.querySelector(`#teacherApp .nav-btn[data-view="${name}"]`);
+  if (btn) btn.classList.add('active');
+}
+// ---------- STUDENT NAV ----------
+document.querySelectorAll('#studentApp .nav-btn').forEach(btn => btn.addEventListener('click', () => goToSView(btn.dataset.sview)));
+function goToSView(name) {
+  document.querySelectorAll('#studentApp .view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('#studentApp .nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sview-' + name).classList.add('active');
+  const btn = document.querySelector(`#studentApp .nav-btn[data-sview="${name}"]`);
+  if (btn) btn.classList.add('active');
+  if (name === 'rewards') rwRender();
+  if (name === 'flashcards') fcPopulateStudyDeckSelect();
+  if (name === 'timer') rtPopulatePassageSelect();
+}
+
+// ============================================================
+// READING FLUENCY MODULE
+// ============================================================
+let rfEntries = [], rfGoal = null, rfMainChart, rfReportChart;
+async function rfSaveEntries() { await fbPersist(); }
+async function rfSaveGoal() { await fbPersist(); }
+function rfRender() {
+  if (rfGoal !== null) document.getElementById('rfGoalInput').value = rfGoal;
+  rfRenderStats(); rfMainChart = rfBuildChart('rfMainChart', rfMainChart, rfEntries); rfRenderTable(); rfRenderReport(); rfUpdateDashboard();
+}
+function rfRenderStats() {
+  const latestEl = document.getElementById('rfStatLatest'), countEl = document.getElementById('rfStatCount'),
+        growthEl = document.getElementById('rfStatGrowth'), toGoalEl = document.getElementById('rfStatToGoal');
+  countEl.textContent = rfEntries.length;
+  if (rfEntries.length === 0) { latestEl.textContent = '—'; growthEl.textContent = '—'; toGoalEl.textContent = rfGoal !== null ? rfGoal + ' wpm' : '—'; return; }
+  const latest = rfEntries[rfEntries.length - 1].wpm;
+  latestEl.textContent = latest + ' wpm';
+  const growth = latest - rfEntries[0].wpm;
+  growthEl.textContent = (growth >= 0 ? '+' : '') + growth + ' wpm';
+  if (rfGoal === null) toGoalEl.textContent = 'No goal set';
+  else { const diff = rfGoal - latest; toGoalEl.textContent = diff <= 0 ? 'Goal reached! 🎉' : diff + ' wpm to go'; }
+}
+function rfBuildChart(canvasId, existing, dataEntries) {
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  if (existing) existing.destroy();
+  const datasets = [{ label: 'WPM', data: dataEntries.map(e => e.wpm), borderColor: '#2563A6', backgroundColor: '#2563A6', pointRadius: 5, pointHoverRadius: 7, tension: 0.25, fill: false }];
+  if (rfGoal !== null && dataEntries.length > 0) datasets.push({ label: 'Goal', data: dataEntries.map(() => rfGoal), borderColor: '#B4740E', borderDash: [6, 4], pointRadius: 0, borderWidth: 2, fill: false });
+  return new Chart(ctx, { type: 'line', data: { labels: dataEntries.map(e => fmtDate(e.date)), datasets },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: rfGoal !== null, position: 'bottom' },
+        tooltip: { callbacks: { afterLabel: (c) => { if (c.datasetIndex !== 0) return ''; const n = dataEntries[c.dataIndex] ? dataEntries[c.dataIndex].notes : ''; return n || ''; } } } },
+      scales: { y: { title: { display: true, text: 'Words Per Minute' }, beginAtZero: false }, x: { title: { display: true, text: 'Date' } } } } });
+}
+function rfRenderTable() {
+  const body = document.getElementById('rfMainTableBody'), empty = document.getElementById('rfEmptyNote');
+  body.innerHTML = '';
+  if (rfEntries.length === 0) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  rfEntries.forEach((e, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${fmtDate(e.date)}</td><td>${e.wpm}</td><td>${e.notes || ''}</td><td><button class="danger-text" data-idx="${i}">Delete</button></td>`;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('button[data-idx]').forEach(btn => btn.addEventListener('click', () => { rfEntries.splice(parseInt(btn.dataset.idx), 1); rfSaveEntries(); rfRender(); }));
+}
+function rfGetRange() { return { start: document.getElementById('rfReportStart').value, end: document.getElementById('rfReportEnd').value }; }
+function rfRenderReport() {
+  const { start, end } = rfGetRange();
+  let filtered = rfEntries, rangeLabel = 'All entries';
+  if (start && end) { filtered = rfEntries.filter(e => e.date >= start && e.date <= end); rangeLabel = `${fmtDate(start)} – ${fmtDate(end)}`; }
+  else if (rfEntries.length > 0) rangeLabel = `${fmtDate(rfEntries[0].date)} – ${fmtDate(rfEntries[rfEntries.length - 1].date)}`;
+  document.getElementById('rfReportRangeLabel').textContent = rangeLabel;
+  document.getElementById('rfReportGoal').textContent = rfGoal !== null ? rfGoal + ' wpm' : 'Not set';
+  const sEl = document.getElementById('rfReportStartWPM'), eEl = document.getElementById('rfReportEndWPM'), gEl = document.getElementById('rfReportGrowth');
+  const body = document.getElementById('rfReportTableBody'), empty = document.getElementById('rfReportEmptyNote');
+  body.innerHTML = '';
+  if (filtered.length === 0) { sEl.textContent = '—'; eEl.textContent = '—'; gEl.textContent = '—'; empty.style.display = 'block'; rfReportChart = rfBuildChart('rfReportChart', rfReportChart, []); return; }
+  empty.style.display = 'none';
+  sEl.textContent = filtered[0].wpm + ' wpm'; eEl.textContent = filtered[filtered.length - 1].wpm + ' wpm';
+  const growth = filtered[filtered.length - 1].wpm - filtered[0].wpm;
+  gEl.textContent = (growth >= 0 ? '+' : '') + growth + ' wpm';
+  filtered.forEach(e => { const tr = document.createElement('tr'); tr.innerHTML = `<td>${fmtDate(e.date)}</td><td>${e.wpm}</td><td>${e.notes || ''}</td>`; body.appendChild(tr); });
+  rfReportChart = rfBuildChart('rfReportChart', rfReportChart, filtered);
+}
+function rfUpdateDashboard() {
+  const el = document.getElementById('dashReadingSummary');
+  if (rfEntries.length === 0) { el.textContent = 'No entries yet'; return; }
+  el.textContent = `Latest: ${rfEntries[rfEntries.length - 1].wpm} wpm across ${rfEntries.length} session${rfEntries.length === 1 ? '' : 's'}`;
+}
+document.getElementById('rfAddBtn').addEventListener('click', async () => {
+  const date = document.getElementById('rfEntryDate').value, wpm = parseInt(document.getElementById('rfEntryWPM').value), notes = document.getElementById('rfEntryNotes').value.trim();
+  if (!date || isNaN(wpm)) { alert('Please enter both a date and a WPM value.'); return; }
+  rfEntries.push({ date, wpm, notes }); rfEntries.sort((a, b) => a.date.localeCompare(b.date));
+  await rfSaveEntries();
+  document.getElementById('rfEntryWPM').value = ''; document.getElementById('rfEntryNotes').value = '';
+  rfRender();
+});
+document.getElementById('rfSaveGoalBtn').addEventListener('click', async () => {
+  const val = parseInt(document.getElementById('rfGoalInput').value);
+  rfGoal = isNaN(val) ? null : val; await rfSaveGoal(); rfRender();
+});
+document.getElementById('rfUpdateReportBtn').addEventListener('click', rfRenderReport);
+document.getElementById('rfPrintBtn').addEventListener('click', () => window.print());
+
+// ============================================================
+// GRADEBOOK MODULE
+// ============================================================
+let gbEntries = [];
+document.getElementById('gbSubject').addEventListener('change', (e) => { document.getElementById('gbCustomSubjectField').style.display = e.target.value === '__other__' ? 'flex' : 'none'; });
+async function gbSave() { await fbPersist(); }
+function gbRender() {
+  const avgContainer = document.getElementById('gbSubjectAverages');
+  const bySubject = {};
+  gbEntries.forEach(e => { (bySubject[e.subject] = bySubject[e.subject] || []).push(e.score); });
+  avgContainer.innerHTML = '';
+  Object.keys(bySubject).sort().forEach(subj => {
+    const scores = bySubject[subj]; const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+    const div = document.createElement('div'); div.className = 'stat-card';
+    div.innerHTML = `<div class="label">${subj}</div><div class="value blue">${avg}%</div>`;
+    avgContainer.appendChild(div);
+  });
+  if (Object.keys(bySubject).length === 0) avgContainer.innerHTML = '<div class="empty-note">No grades logged yet — averages will appear here.</div>';
+  const body = document.getElementById('gbTableBody'), empty = document.getElementById('gbEmptyNote');
+  body.innerHTML = '';
+  if (gbEntries.length === 0) empty.style.display = 'block';
+  else {
+    empty.style.display = 'none';
+    gbEntries.forEach((e, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${fmtDate(e.date)}</td><td>${e.subject}</td><td>${e.assignment}</td><td>${e.score}%</td><td><button class="danger-text" data-idx="${i}">Delete</button></td>`;
+      body.appendChild(tr);
+    });
+    body.querySelectorAll('button[data-idx]').forEach(btn => btn.addEventListener('click', () => { gbEntries.splice(parseInt(btn.dataset.idx), 1); gbSave(); gbRender(); }));
+  }
+  const dEl = document.getElementById('dashGradebookSummary');
+  const totalAvg = gbEntries.length ? Math.round(gbEntries.reduce((a, b) => a + b.score, 0) / gbEntries.length) : null;
+  dEl.textContent = gbEntries.length ? `${gbEntries.length} grade${gbEntries.length === 1 ? '' : 's'} logged, ${totalAvg}% overall average` : 'No grades yet';
+  if (typeof rcGenerate === 'function') rcGenerate();
+}
+document.getElementById('gbAddBtn').addEventListener('click', async () => {
+  const date = document.getElementById('gbDate').value;
+  let subject = document.getElementById('gbSubject').value;
+  if (subject === '__other__') subject = document.getElementById('gbCustomSubject').value.trim() || 'Other';
+  const assignment = document.getElementById('gbAssignment').value.trim();
+  const score = parseInt(document.getElementById('gbScore').value);
+  if (!date || !assignment || isNaN(score)) { alert('Please fill in date, assignment, and score.'); return; }
+  gbEntries.push({ date, subject, assignment, score });
+  gbEntries.sort((a, b) => b.date.localeCompare(a.date));
+  await gbSave();
+  document.getElementById('gbAssignment').value = ''; document.getElementById('gbScore').value = ''; document.getElementById('gbCustomSubject').value = '';
+  gbRender();
+});
+
+// ============================================================
+// REPORT CARD MODULE
+// ============================================================
+function letterGrade(avg) { if (avg >= 90) return 'A'; if (avg >= 80) return 'B'; if (avg >= 70) return 'C'; if (avg >= 60) return 'D'; return 'F'; }
+function rcGenerate() {
+  const name = document.getElementById('rcStudentName').value.trim() || 'Student';
+  const quarter = document.getElementById('rcQuarterLabel').value.trim();
+  const start = document.getElementById('rcStart').value, end = document.getElementById('rcEnd').value;
+  document.getElementById('rcStudentLine').textContent = 'Student: ' + name;
+  let rangeLabel = quarter ? quarter : '';
+  if (start && end) rangeLabel += (rangeLabel ? ' — ' : '') + `${fmtDate(start)} to ${fmtDate(end)}`;
+  document.getElementById('rcQuarterLine').textContent = rangeLabel || 'Select a date range above';
+  let filtered = gbEntries;
+  if (start && end) filtered = gbEntries.filter(e => e.date >= start && e.date <= end);
+  const body = document.getElementById('rcTableBody'), empty = document.getElementById('rcEmptyNote');
+  body.innerHTML = '';
+  const bySubject = {};
+  filtered.forEach(e => { (bySubject[e.subject] = bySubject[e.subject] || []).push(e.score); });
+  const subjects = Object.keys(bySubject).sort();
+  if (subjects.length === 0) { empty.style.display = 'block'; document.getElementById('rcOverallAvg').textContent = '—'; document.getElementById('rcOverallGrade').textContent = '—'; }
+  else {
+    empty.style.display = 'none'; let allScores = [];
+    subjects.forEach(subj => {
+      const scores = bySubject[subj]; allScores = allScores.concat(scores);
+      const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${subj}</td><td>${scores.length}</td><td>${avg}%</td><td><strong>${letterGrade(avg)}</strong></td>`;
+      body.appendChild(tr);
+    });
+    const overallAvg = Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length);
+    document.getElementById('rcOverallAvg').textContent = overallAvg + '%';
+    document.getElementById('rcOverallGrade').textContent = letterGrade(overallAvg);
+  }
+  let atFiltered = atEntries;
+  if (start && end) atFiltered = atEntries.filter(e => e.date >= start && e.date <= end);
+  const atEl = document.getElementById('rcAttendance');
+  if (atFiltered.length === 0) atEl.textContent = '—';
+  else { const present = atFiltered.filter(e => e.status === 'Present').length, half = atFiltered.filter(e => e.status === 'Half Day').length;
+    atEl.textContent = Math.round(((present + half * 0.5) / atFiltered.length) * 100) + '%'; }
+}
+document.getElementById('rcGenerateBtn').addEventListener('click', rcGenerate);
+document.getElementById('rcPrintBtn').addEventListener('click', () => { rcGenerate(); window.print(); });
+
+// ============================================================
+// ATTENDANCE MODULE
+// ============================================================
+let atEntries = [];
+async function atSave() { await fbPersist(); }
+function atRender() {
+  const present = atEntries.filter(e => e.status === 'Present').length, absent = atEntries.filter(e => e.status === 'Absent').length, half = atEntries.filter(e => e.status === 'Half Day').length;
+  document.getElementById('atStatPresent').textContent = present;
+  document.getElementById('atStatAbsent').textContent = absent;
+  document.getElementById('atStatHalf').textContent = half;
+  const total = atEntries.length, rateEl = document.getElementById('atStatRate');
+  rateEl.textContent = total === 0 ? '—' : Math.round(((present + half * 0.5) / total) * 100) + '%';
+  const body = document.getElementById('atTableBody'), empty = document.getElementById('atEmptyNote');
+  body.innerHTML = '';
+  if (atEntries.length === 0) empty.style.display = 'block';
+  else {
+    empty.style.display = 'none';
+    atEntries.forEach((e, i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${fmtDate(e.date)}</td><td>${e.status}</td><td>${e.notes || ''}</td><td><button class="danger-text" data-idx="${i}">Delete</button></td>`;
+      body.appendChild(tr);
+    });
+    body.querySelectorAll('button[data-idx]').forEach(btn => btn.addEventListener('click', () => { atEntries.splice(parseInt(btn.dataset.idx), 1); atSave(); atRender(); }));
+  }
+  const dEl = document.getElementById('dashAttendanceSummary');
+  dEl.textContent = total ? `${total} day${total === 1 ? '' : 's'} logged, ${rateEl.textContent} attendance` : 'No days logged yet';
+  if (typeof rcGenerate === 'function') rcGenerate();
+}
+document.getElementById('atAddBtn').addEventListener('click', async () => {
+  const date = document.getElementById('atDate').value, status = document.getElementById('atStatus').value, notes = document.getElementById('atNotes').value.trim();
+  if (!date) { alert('Please select a date.'); return; }
+  atEntries.push({ date, status, notes });
+  atEntries.sort((a, b) => b.date.localeCompare(a.date));
+  await atSave();
+  document.getElementById('atNotes').value = '';
+  atRender();
+});
+
+// ============================================================
+// QUICK LINKS MODULE
+// ============================================================
+let lkLinks = [];
+const defaultLinks = [
+  { label: 'Time4Learning', url: 'https://www.time4learning.com' },
+  { label: 'IXL', url: 'https://www.ixl.com' },
+  { label: 'Math Lesson Plan', url: 'https://docs.google.com/spreadsheets/d/1gya33E6yeUxlWKthddLIL-OHq3d1tEPY4Yg7RN9aWCY/edit' },
+  { label: 'ELA Lesson Plan', url: 'https://docs.google.com/spreadsheets/d/1xdRwnlOX6Km0yRTeUyw1e4zX8mpcDioKMmLQtTDz0gk/edit' },
+  { label: 'Reading Lesson Plan', url: 'https://docs.google.com/spreadsheets/d/100fiEoAIEOLdPDMfVCuubQbzBJiKKoyU7FM4p7WKn1k/edit' },
+];
+async function lkSave() { await fbPersist(); }
+function lkRender() {
+  const grid = document.getElementById('lkGrid');
+  grid.innerHTML = '';
+  lkLinks.forEach((l, i) => {
+    const a = document.createElement('a');
+    a.className = 'link-card'; a.href = l.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    a.innerHTML = `<h4>${l.label}</h4><p>${l.url}</p>`;
+    const rm = document.createElement('button');
+    rm.className = 'remove-link'; rm.textContent = 'Remove';
+    rm.addEventListener('click', (evt) => { evt.preventDefault(); evt.stopPropagation(); lkLinks.splice(i, 1); lkSave(); lkRender(); });
+    a.appendChild(rm);
+    grid.appendChild(a);
+  });
+}
+document.getElementById('lkAddBtn').addEventListener('click', async () => {
+  const label = document.getElementById('lkLabel').value.trim();
+  let url = document.getElementById('lkUrl').value.trim();
+  if (!label || !url) { alert('Please enter both a label and a URL.'); return; }
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  lkLinks.push({ label, url });
+  await lkSave();
+  document.getElementById('lkLabel').value = ''; document.getElementById('lkUrl').value = '';
+  lkRender();
+});
+
+// ============================================================
+// MY DAY MODULE (tasks template + daily log)
+// ============================================================
+let mdTasks = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [] };
+let mdLog = [];
+async function mdSaveTasks() { await fbPersist(); }
+async function mdSaveLog() { await fbPersist(); }
+
+function mdRenderTeacherTaskList() {
+  const day = document.getElementById('mdDaySelect').value;
+  const body = document.getElementById('mdTaskTableBody'), empty = document.getElementById('mdEmptyNote');
+  body.innerHTML = '';
+  const tasks = mdTasks[day] || [];
+  if (tasks.length === 0) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tasks.forEach((t, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${t}</td><td><button class="danger-text" data-idx="${i}">Delete</button></td>`;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('button[data-idx]').forEach(btn => btn.addEventListener('click', () => {
+    tasks.splice(parseInt(btn.dataset.idx), 1); mdSaveTasks(); mdRenderTeacherTaskList(); saRender();
+  }));
+}
+document.getElementById('mdDaySelect').addEventListener('change', mdRenderTeacherTaskList);
+document.getElementById('mdAddTaskBtn').addEventListener('click', async () => {
+  const day = document.getElementById('mdDaySelect').value;
+  const task = document.getElementById('mdNewTask').value.trim();
+  if (!task) return;
+  mdTasks[day] = mdTasks[day] || [];
+  mdTasks[day].push(task);
+  await mdSaveTasks();
+  document.getElementById('mdNewTask').value = '';
+  mdRenderTeacherTaskList();
+});
+
+function mdRenderToday() {
+  const today = todayStr(); const day = weekdayName(today);
+  document.getElementById('mdTodayLabel').textContent = `Today is ${day}!`;
+  const tasks = mdTasks[day] || [];
+  let entry = mdLog.find(e => e.date === today);
+  if (!entry) { entry = { date: today, completed: tasks.map(() => false) }; }
+  if (entry.completed.length !== tasks.length) { entry.completed = tasks.map((_, i) => entry.completed[i] || false); }
+
+  const list = document.getElementById('mdTaskList');
+  const noTasksNote = document.getElementById('mdNoTasksNote');
+  list.innerHTML = '';
+  if (tasks.length === 0) { noTasksNote.style.display = 'block'; document.getElementById('mdProgressText').textContent = '0 of 0 done'; document.getElementById('mdProgressFill').style.width = '0%'; document.getElementById('mdCelebrate').style.display = 'none'; return; }
+  noTasksNote.style.display = 'none';
+
+  tasks.forEach((t, i) => {
+    const row = document.createElement('div');
+    row.className = 'task-row' + (entry.completed[i] ? ' done' : '');
+    row.innerHTML = `<input type="checkbox" id="mdcb${i}" ${entry.completed[i] ? 'checked' : ''}><label for="mdcb${i}">${t}</label>`;
+    row.querySelector('input').addEventListener('change', async (ev) => {
+      entry.completed[i] = ev.target.checked;
+      const idx = mdLog.findIndex(e => e.date === today);
+      if (idx >= 0) mdLog[idx] = entry; else mdLog.push(entry);
+      await mdSaveLog();
+      mdRenderToday();
+      rwRender();
+      saRender();
+    });
+    list.appendChild(row);
+  });
+  const doneCount = entry.completed.filter(Boolean).length;
+  document.getElementById('mdProgressText').textContent = `${doneCount} of ${tasks.length} done`;
+  document.getElementById('mdProgressFill').style.width = Math.round((doneCount / tasks.length) * 100) + '%';
+  document.getElementById('mdCelebrate').style.display = (doneCount === tasks.length) ? 'block' : 'none';
+}
+
+// ============================================================
+// FLASHCARDS MODULE
+// ============================================================
+let fcDecks = [], fcLog = [];
+let fcCurrentDeck = null, fcCurrentCards = [], fcCurrentIdx = 0, fcShowingBack = false, fcScore = 0;
+async function fcSaveDecks() { await fbPersist(); }
+async function fcSaveLog() { await fbPersist(); }
+
+function fcPopulateTeacherDeckSelect() {
+  const sel = document.getElementById('fcDeckSelect');
+  sel.innerHTML = '';
+  fcDecks.forEach((d, i) => { const opt = document.createElement('option'); opt.value = i; opt.textContent = d.name; sel.appendChild(opt); });
+}
+document.getElementById('fcNewDeckBtn').addEventListener('click', async () => {
+  const name = document.getElementById('fcNewDeckName').value.trim();
+  if (!name) return;
+  fcDecks.push({ name, cards: [] });
+  await fcSaveDecks();
+  document.getElementById('fcNewDeckName').value = '';
+  fcPopulateTeacherDeckSelect();
+  fcRenderTeacherCardTable();
+});
+document.getElementById('fcDeckSelect').addEventListener('change', fcRenderTeacherCardTable);
+function fcRenderTeacherCardTable() {
+  const idx = parseInt(document.getElementById('fcDeckSelect').value);
+  const body = document.getElementById('fcCardTableBody'), empty = document.getElementById('fcEmptyNote');
+  body.innerHTML = '';
+  if (isNaN(idx) || !fcDecks[idx]) { empty.style.display = 'block'; return; }
+  const cards = fcDecks[idx].cards;
+  if (cards.length === 0) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  cards.forEach((c, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${c.front}</td><td>${c.back}</td><td><button class="danger-text" data-idx="${i}">Delete</button></td>`;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('button[data-idx]').forEach(btn => btn.addEventListener('click', async () => {
+    cards.splice(parseInt(btn.dataset.idx), 1); await fcSaveDecks(); fcRenderTeacherCardTable();
+  }));
+}
+document.getElementById('fcAddCardBtn').addEventListener('click', async () => {
+  const idx = parseInt(document.getElementById('fcDeckSelect').value);
+  if (isNaN(idx) || !fcDecks[idx]) { alert('Create a deck first.'); return; }
+  const front = document.getElementById('fcCardFront').value.trim(), back = document.getElementById('fcCardBack').value.trim();
+  if (!front || !back) { alert('Please fill in both front and back.'); return; }
+  fcDecks[idx].cards.push({ front, back });
+  await fcSaveDecks();
+  document.getElementById('fcCardFront').value = ''; document.getElementById('fcCardBack').value = '';
+  fcRenderTeacherCardTable();
+});
+
+function fcPopulateStudyDeckSelect() {
+  const sel = document.getElementById('fcStudyDeckSelect');
+  const noDeckNote = document.getElementById('fcNoDeckNote');
+  sel.innerHTML = '';
+  if (fcDecks.length === 0) { noDeckNote.style.display = 'block'; document.getElementById('fcPickerRow').style.display = 'none'; return; }
+  noDeckNote.style.display = 'none'; document.getElementById('fcPickerRow').style.display = 'flex';
+  fcDecks.forEach((d, i) => { const opt = document.createElement('option'); opt.value = i; opt.textContent = `${d.name} (${d.cards.length} cards)`; sel.appendChild(opt); });
+}
+document.getElementById('fcStartBtn').addEventListener('click', () => {
+  const idx = parseInt(document.getElementById('fcStudyDeckSelect').value);
+  if (isNaN(idx) || !fcDecks[idx] || fcDecks[idx].cards.length === 0) { alert('This deck has no cards yet.'); return; }
+  fcCurrentDeck = fcDecks[idx];
+  fcCurrentCards = [...fcCurrentDeck.cards].sort(() => Math.random() - 0.5);
+  fcCurrentIdx = 0; fcShowingBack = false; fcScore = 0;
+  document.getElementById('fcStudyArea').style.display = 'block';
+  document.getElementById('fcResultArea').style.display = 'none';
+  fcShowCard();
+});
+function fcShowCard() {
+  const card = fcCurrentCards[fcCurrentIdx];
+  document.getElementById('fcProgressLabel').textContent = `Card ${fcCurrentIdx + 1} of ${fcCurrentCards.length}`;
+  document.getElementById('fcCardDisplay').textContent = fcShowingBack ? card.back : card.front;
+  document.getElementById('fcAnswerButtons').style.display = fcShowingBack ? 'flex' : 'none';
+}
+document.getElementById('fcCardDisplay').addEventListener('click', () => { fcShowingBack = !fcShowingBack; fcShowCard(); });
+function fcNextCard(correct) {
+  if (correct) fcScore++;
+  fcCurrentIdx++;
+  if (fcCurrentIdx >= fcCurrentCards.length) { fcFinishSession(); return; }
+  fcShowingBack = false; fcShowCard();
+}
+document.getElementById('fcGotItBtn').addEventListener('click', () => fcNextCard(true));
+document.getElementById('fcStillLearningBtn').addEventListener('click', () => fcNextCard(false));
+async function fcFinishSession() {
+  document.getElementById('fcStudyArea').style.display = 'none';
+  document.getElementById('fcResultArea').style.display = 'block';
+  document.getElementById('fcResultScore').textContent = `You got ${fcScore} out of ${fcCurrentCards.length} right!`;
+  fcLog.push({ date: todayStr(), deck: fcCurrentDeck.name, correct: fcScore, total: fcCurrentCards.length });
+  await fcSaveLog();
+  saRender();
+}
+document.getElementById('fcRestartBtn').addEventListener('click', () => {
+  document.getElementById('fcResultArea').style.display = 'none';
+  document.getElementById('fcStudyArea').style.display = 'none';
+});
+
+// ============================================================
+// REWARDS MODULE
+// ============================================================
+function rwComputeStreak() {
+  const sorted = [...mdLog].filter(e => e.completed.length > 0 && e.completed.every(Boolean)).map(e => e.date).sort().reverse();
+  if (sorted.length === 0) return 0;
+  let streak = 0;
+  let cursor = new Date(todayStr() + 'T00:00:00');
+  const completedSet = new Set(sorted);
+  while (true) {
+    const key = cursor.getFullYear() + '-' + String(cursor.getMonth()+1).padStart(2,'0') + '-' + String(cursor.getDate()).padStart(2,'0');
+    if (completedSet.has(key)) { streak++; cursor.setDate(cursor.getDate() - 1); }
+    else break;
+  }
+  return streak;
+}
+function rwRender() {
+  const streak = rwComputeStreak();
+  document.getElementById('rwStreakCount').textContent = streak + (streak === 1 ? ' day' : ' days');
+  document.getElementById('rwStreakEmoji').textContent = streak >= 10 ? '🏆' : streak >= 5 ? '🔥' : streak >= 1 ? '⭐' : '🌱';
+
+  const milestones = [{ n: 3, emoji: '⭐', label: '3-Day Streak' }, { n: 5, emoji: '🔥', label: '5-Day Streak' }, { n: 10, emoji: '🏆', label: '10-Day Streak' }, { n: 20, emoji: '💎', label: '20-Day Streak' }];
+  const row = document.getElementById('rwBadgeRow');
+  row.innerHTML = '';
+  milestones.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'badge' + (streak >= m.n ? '' : ' locked');
+    div.innerHTML = `<div class="badge-emoji">${m.emoji}</div><div class="badge-label">${m.label}</div>`;
+    row.appendChild(div);
+  });
+
+  const grid = document.getElementById('rwStreakGrid');
+  grid.innerHTML = '';
+  const byDate = {};
+  mdLog.forEach(e => { byDate[e.date] = e.completed.length > 0 && e.completed.every(Boolean); });
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    const div = document.createElement('div');
+    div.className = 'streak-day';
+    if (byDate[key] === true) { div.style.background = 'var(--green)'; div.textContent = '✓'; }
+    else if (byDate[key] === false) { div.style.background = '#D9AD5B'; div.textContent = '·'; }
+    else { div.style.background = '#D8DCE1'; div.textContent = ''; }
+    div.title = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    grid.appendChild(div);
+  }
+}
+
+// ============================================================
+// READING PASSAGES MODULE (teacher-managed passage library)
+// ============================================================
+let rpPassages = [];
+async function rpSave() { await fbPersist(); }
+function rpWordCount(text) { return text.trim().split(/\s+/).filter(Boolean).length; }
+function rpRenderTeacherTable() {
+  const body = document.getElementById('rpTableBody'), empty = document.getElementById('rpEmptyNote');
+  body.innerHTML = '';
+  if (rpPassages.length === 0) { empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  rpPassages.forEach((p, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${p.title}</td><td>${rpWordCount(p.text)}</td><td><button class="danger-text" data-idx="${i}">Delete</button></td>`;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('button[data-idx]').forEach(btn => btn.addEventListener('click', async () => {
+    rpPassages.splice(parseInt(btn.dataset.idx), 1); await rpSave(); rpRenderTeacherTable(); rtPopulatePassageSelect();
+  }));
+}
+document.getElementById('rpAddBtn').addEventListener('click', async () => {
+  const title = document.getElementById('rpTitle').value.trim();
+  const text = document.getElementById('rpText').value.trim();
+  if (!title || !text) { alert('Please add both a title and the passage text.'); return; }
+  rpPassages.push({ title, text });
+  await rpSave();
+  document.getElementById('rpTitle').value = ''; document.getElementById('rpText').value = '';
+  rpRenderTeacherTable();
+  rtPopulatePassageSelect();
+});
+
+// ============================================================
+// READING TIMER MODULE (student-facing, tap-to-mark-mistakes)
+// ============================================================
+let rtSeconds = 0, rtInterval = null, rtRunning = false;
+let rtWords = [], rtMiscueSet = new Set(), rtStopIndex = null, rtMarkStopMode = false, rtCurrentPassageTitle = '';
+
+function rtPopulatePassageSelect() {
+  const sel = document.getElementById('rtPassageSelect');
+  const noNote = document.getElementById('rtNoPassageNote');
+  sel.innerHTML = '';
+  if (rpPassages.length === 0) { noNote.style.display = 'block'; document.getElementById('rtBeginBtn').style.display = 'none'; return; }
+  noNote.style.display = 'none'; document.getElementById('rtBeginBtn').style.display = 'inline-block';
+  rpPassages.forEach((p, i) => { const opt = document.createElement('option'); opt.value = i; opt.textContent = `${p.title} (${rpWordCount(p.text)} words)`; sel.appendChild(opt); });
+}
+
+document.getElementById('rtBeginBtn').addEventListener('click', () => {
+  const idx = parseInt(document.getElementById('rtPassageSelect').value);
+  if (isNaN(idx) || !rpPassages[idx]) return;
+  const passage = rpPassages[idx];
+  rtCurrentPassageTitle = passage.title;
+  rtWords = passage.text.trim().split(/\s+/).filter(Boolean);
+  rtMiscueSet = new Set(); rtStopIndex = null; rtMarkStopMode = false; rtSeconds = 0; rtRunning = false;
+  document.getElementById('rtSetupCard').style.display = 'none';
+  document.getElementById('rtResultCard').style.display = 'none';
+  document.getElementById('rtReadingCard').style.display = 'block';
+  document.getElementById('rtDisplay').textContent = '00:00';
+  document.getElementById('rtStartBtn').disabled = false;
+  document.getElementById('rtStopBtn').disabled = true;
+  rtRenderPassage();
+});
+
+function rtRenderPassage() {
+  const container = document.getElementById('rtPassageDisplay');
+  container.innerHTML = '';
+  rtWords.forEach((w, i) => {
+    const span = document.createElement('span');
+    span.textContent = w + ' ';
+    span.dataset.idx = i;
+    span.style.cursor = 'pointer';
+    span.style.borderRadius = '4px';
+    span.style.padding = '1px 2px';
+    if (rtMiscueSet.has(i)) { span.style.color = 'white'; span.style.background = 'var(--red)'; span.style.textDecoration = 'line-through'; }
+    if (rtStopIndex === i) { span.style.outline = '3px solid var(--blue)'; }
+    span.addEventListener('click', () => rtWordTapped(i));
+    container.appendChild(span);
+  });
+}
+function rtWordTapped(i) {
+  if (!rtRunning) return;
+  if (rtMarkStopMode) {
+    rtStopIndex = i;
+    rtMarkStopMode = false;
+    document.getElementById('rtMarkStopBtn').textContent = '📍 Mark Stop Point';
+  } else {
+    if (rtMiscueSet.has(i)) rtMiscueSet.delete(i); else rtMiscueSet.add(i);
+  }
+  rtRenderPassage();
+}
+document.getElementById('rtStartBtn').addEventListener('click', () => {
+  rtRunning = true; rtSeconds = 0;
+  document.getElementById('rtStartBtn').disabled = true;
+  document.getElementById('rtStopBtn').disabled = false;
+  rtInterval = setInterval(() => {
+    rtSeconds++;
+    const m = String(Math.floor(rtSeconds / 60)).padStart(2, '0'), s = String(rtSeconds % 60).padStart(2, '0');
+    document.getElementById('rtDisplay').textContent = `${m}:${s}`;
+  }, 1000);
+});
+document.getElementById('rtMarkStopBtn').addEventListener('click', () => {
+  rtMarkStopMode = !rtMarkStopMode;
+  document.getElementById('rtMarkStopBtn').textContent = rtMarkStopMode ? '📍 Tap the last word now...' : '📍 Mark Stop Point';
+});
+document.getElementById('rtFinishedBtn').addEventListener('click', () => {
+  rtStopIndex = rtWords.length - 1;
+  rtRenderPassage();
+});
+document.getElementById('rtStopBtn').addEventListener('click', () => {
+  clearInterval(rtInterval);
+  rtRunning = false;
+  document.getElementById('rtStopBtn').disabled = true;
+  if (rtStopIndex === null) rtStopIndex = rtWords.length - 1; // default: assume finished if not marked
+  rtShowResults();
+});
+function rtShowResults() {
+  const wordsAttempted = rtStopIndex + 1;
+  const miscueCount = [...rtMiscueSet].filter(i => i <= rtStopIndex).length;
+  const minutes = Math.max(rtSeconds / 60, 1/60);
+  const wcpm = Math.round((wordsAttempted - miscueCount) / minutes);
+  document.getElementById('rtReadingCard').style.display = 'none';
+  document.getElementById('rtResultCard').style.display = 'block';
+  document.getElementById('rtWordsRead').textContent = `${wordsAttempted} / ${rtWords.length}`;
+  document.getElementById('rtMiscueCount').textContent = miscueCount;
+  document.getElementById('rtWcpm').textContent = wcpm;
+  document.getElementById('rtSaveBtn').dataset.wcpm = wcpm;
+  document.getElementById('rtSaveBtn').dataset.wordsAttempted = wordsAttempted;
+  document.getElementById('rtSaveBtn').dataset.miscues = miscueCount;
+  document.getElementById('rtSaveBtn').style.display = 'inline-block';
+  document.getElementById('rtSavedNote').style.display = 'none';
+}
+document.getElementById('rtSaveBtn').addEventListener('click', async () => {
+  const wcpm = parseInt(document.getElementById('rtSaveBtn').dataset.wcpm);
+  const wordsAttempted = document.getElementById('rtSaveBtn').dataset.wordsAttempted;
+  const miscues = document.getElementById('rtSaveBtn').dataset.miscues;
+  const notes = `Passage: "${rtCurrentPassageTitle}" — ${wordsAttempted}/${rtWords.length} words, ${miscues} miscues`;
+  rfEntries.push({ date: todayStr(), wpm: wcpm, notes });
+  rfEntries.sort((a, b) => a.date.localeCompare(b.date));
+  await rfSaveEntries();
+  rfRender();
+  document.getElementById('rtSaveBtn').style.display = 'none';
+  document.getElementById('rtSavedNote').style.display = 'block';
+});
+document.getElementById('rtDoOverBtn').addEventListener('click', () => {
+  document.getElementById('rtResultCard').style.display = 'none';
+  document.getElementById('rtSetupCard').style.display = 'block';
+});
+
+// ============================================================
+// STUDENT ACTIVITY (teacher view of student usage)
+// ============================================================
+function saRender() {
+  const streakEl = document.getElementById('saCurrentStreak');
+  if (streakEl) streakEl.textContent = rwComputeStreak() + ' days';
+
+  const mdBody = document.getElementById('saMyDayBody'), mdEmpty = document.getElementById('saMyDayEmpty');
+  if (mdBody) {
+    mdBody.innerHTML = '';
+    const recent = [...mdLog].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 14);
+    if (recent.length === 0) { mdEmpty.style.display = 'block'; }
+    else {
+      mdEmpty.style.display = 'none';
+      recent.forEach(e => {
+        const done = e.completed.filter(Boolean).length;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${fmtDate(e.date)}</td><td>${done} of ${e.completed.length}</td><td>${e.completed.length > 0 && e.completed.every(Boolean) ? '✅' : '—'}</td>`;
+        mdBody.appendChild(tr);
+      });
+    }
+  }
+  const fcBody = document.getElementById('saFlashBody'), fcEmpty = document.getElementById('saFlashEmpty');
+  if (fcBody) {
+    fcBody.innerHTML = '';
+    const recent = [...fcLog].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 14);
+    if (recent.length === 0) { fcEmpty.style.display = 'block'; }
+    else {
+      fcEmpty.style.display = 'none';
+      recent.forEach(e => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${fmtDate(e.date)}</td><td>${e.deck}</td><td>${e.correct} / ${e.total}</td>`;
+        fcBody.appendChild(tr);
+      });
+    }
+  }
+  const dashEl = document.getElementById('dashStudentSummary');
+  if (dashEl) {
+    const streak = rwComputeStreak();
+    dashEl.textContent = streak > 0 ? `${streak}-day streak going strong!` : (mdLog.length || fcLog.length) ? 'Active, but no current streak' : 'No activity yet';
+  }
+}
+
+// ============================================================
+// BACKUP & RESTORE MODULE
+// ============================================================
+function bkGatherAll() {
+  return {
+    exportedAt: new Date().toISOString(),
+    rfEntries, rfGoal, gbEntries, atEntries, lkLinks,
+    mdTasks, mdLog, fcDecks, fcLog, rpPassages
+  };
+}
+document.getElementById('bkDownloadBtn').addEventListener('click', () => {
+  const data = bkGatherAll();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = todayStr();
+  a.href = url;
+  a.download = `hilliard-school-backup-${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  document.getElementById('bkStatusNote').style.color = 'var(--green)';
+  document.getElementById('bkStatusNote').textContent = '✅ Backup downloaded! Save this file somewhere safe.';
+});
+document.getElementById('bkRestoreBtn').addEventListener('click', () => {
+  document.getElementById('bkFileInput').click();
+});
+document.getElementById('bkFileInput').addEventListener('change', async (ev) => {
+  const file = ev.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!confirm('This will REPLACE all current data (on every synced device) with the backup file. Continue?')) return;
+
+    fbApplyData(data);
+    await fbPersist();
+    fbRenderAll();
+
+    document.getElementById('bkStatusNote').style.color = 'var(--green)';
+    document.getElementById('bkStatusNote').textContent = `✅ Restored backup from ${fmtDate(data.exportedAt ? data.exportedAt.split('T')[0] : todayStr())}.`;
+  } catch (e) {
+    document.getElementById('bkStatusNote').style.color = 'var(--red)';
+    document.getElementById('bkStatusNote').textContent = '❌ Could not read that file. Make sure it\'s a backup file downloaded from this app.';
+  }
+  ev.target.value = '';
+});
+
+// ---------- INIT ----------
+fbInit();
+</script>
+</body>
+</html>
